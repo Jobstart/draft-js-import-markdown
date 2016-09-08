@@ -50,7 +50,7 @@ var defaults = {
 
 var block = {
   newline: /^\n+/,
-  code: /```\n([^```]*)\n```/,
+  code: /^```\n([^```]*)\n```\n*/,
   fences: noop,
   hr: /^( *[-*_]){3,} *(?:\n+|$)/,
   heading: /^ *(#{1,6}) *([^\n]+?) *#* *(?:\n+|$)/,
@@ -184,10 +184,9 @@ Lexer.prototype.token = function(src, top, bq) {
     // code
     if ((cap = this.rules.code.exec(src))) {
       src = src.substring(cap[0].length);
-      cap = cap[0].replace(/^ {4}/gm, '');
       this.tokens.push({
         type: 'code',
-        text: !this.options.pedantic ? cap.replace(/\n+$/, '') : cap,
+        text: cap[1]
       });
       continue;
     }
@@ -601,13 +600,8 @@ function Renderer(options) {
   this.options = options || {};
 }
 
-Renderer.prototype.code = function(childNode, lang) {
-  var attributes = [];
-  if (lang) {
-    attributes.push(['class', this.options.langPrefix + lang]);
-  }
-  var codeNode = new ElementNode('code', attributes, [childNode]);
-  return new ElementNode('pre', [], [codeNode]);
+Renderer.prototype.code = function(text, lang) {
+  return new ElementNode('pre', [], [new TextNode(text)]);
 };
 
 Renderer.prototype.blockquote = function(childNode) {
@@ -862,7 +856,7 @@ const MarkdownParser = {
     if (options.getAST) {
       return new ElementNode('body', [], [fragment]);
     } else {
-      return fragment.toString(this.options.xhtml);
+      return fragment.toString(options.xhtml);
     }
   },
 };
